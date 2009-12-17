@@ -1,4 +1,3 @@
-from __future__ import with_statement
 from django.conf import settings
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
@@ -61,7 +60,6 @@ class ShareEmail(models.Model):
         text_template = select_template_for_content_type('body.txt',
                                                          self.content_type)
         text_body = text_template.render(context)
-        print text_body
 
         message = EmailMultiAlternatives(subject, text_body,
                                          to=[self.recipient_email])
@@ -74,9 +72,6 @@ class ShareEmail(models.Model):
             pass
         else:
             html_body = html_template.render(context)
-            print '-' * 80
-            with file('/tmp/body.html', 'w') as f:
-                print >> f, html_body
             message.attach_alternative(html_body, 'text/html')
 
         message.send()
