@@ -7,7 +7,8 @@ from django.template.context import RequestContext
 from email_share.forms import ShareEmailForm
 from email_share.models import ShareEmail
 
-def share_email(request, content_type_pk, object_id, extra_context=None):
+def share_email(request, content_type_pk, object_id, extra_context=None,
+                form_class=ShareEmailForm):
     content_type = get_object_or_404(ContentType, pk=content_type_pk)
     try:
         content_object = content_type.get_object_for_this_type(pk=object_id)
@@ -15,16 +16,16 @@ def share_email(request, content_type_pk, object_id, extra_context=None):
         raise Http404
 
     if request.method == 'POST':
-        form = ShareEmailForm(request.POST,
-                              content_object=content_object,
-                              request=request)
+        form = form_class(request.POST,
+                          content_object=content_object,
+                          request=request)
         if form.is_valid():
             share_email = form.save()
             share_email.send(extra_context=extra_context)
             return HttpResponseRedirect(share_email.get_absolute_url())
     else:
-        form = ShareEmailForm(content_object=content_object,
-                              request=request)
+        form = form_class(content_object=content_object,
+                          request=request)
 
     return render_to_response('email_share/form.html',
                               {'form': form,

@@ -1,7 +1,26 @@
-from django.forms import ValidationError
+import re
+
+from django.forms.fields import email_re
+from django.forms import CharField, ValidationError
 from django.forms.models import ModelForm
+from django.utils.translation import ugettext as _
 
 from email_share.models import ShareEmail
+
+email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
+
+class EmailListField(CharField):
+    # based on code from http://www.djangosnippets.org/snippets/1958/
+    def clean(self, value):
+        super(EmailListField, self).clean(value)
+        emails = email_separator_re.split(value)
+        if not emails:
+            raise ValidationError(_(u'Enter at least one e-mail address.'))
+        for email in emails:
+            if not email_re.match(email):
+                raise ValidationError(
+                    _('%s is not a valid e-mail address.') % email)
+        return emails
 
 class ShareEmailForm(ModelForm):
 
@@ -48,3 +67,26 @@ class ShareEmailForm(ModelForm):
         if original_commit:
             share_email.save()
         return share_email
+
+class ShareMultipleEmailForm(ShareEmailForm):
+
+    recipient_email = EmailListField(label="To")
+
+    def save(self, *args, **kwargs):
+        shares = ShareMultipleEmail()
+        for email in self.cleaned_data['recipient_email']:
+            data = self.data.copy()
+            data['recipient_email'] = email
+            shares.append(ShareEmailForm(data,
+                                         content_object=self.content_object,
+                                         request=self.request).save(*args,
+                                                                     **kwargs))
+        return shares
+
+class ShareMultipleEmail(list):
+    def send(self, *args, **kwargs):
+        for email in self:
+            email.send(*args, **kwargs)
+
+    def get_absolute_url(self):
+        return self[0].get_absolute_url()
