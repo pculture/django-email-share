@@ -5,6 +5,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.db import models
 from django.template import Context, TemplateDoesNotExist
 from django.template.loader import select_template
+from django.utils.encoding import force_unicode
 
 def select_template_for_content_type(template, content_type):
     return select_template([
@@ -34,11 +35,13 @@ class ShareEmail(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('email-share-sent', (self.pk,
-                                     abs(hash(self.sender_email + \
-                                                  self.recipient_email + \
-                                                  self.message + \
-                                                  settings.SECRET_KEY))))
+        parts = (force_unicode(self.sender_email),
+                 force_unicode(self.recipient_email),
+                 force_unicode(self.message),
+                 force_unicode(settings.SECRET_KEY))
+        parts = tuple([part.encode('utf8') for part in parts])
+        return ('email-share-sent', (self.pk, abs(hash(parts))))
+
     def send(self, extra_context=None):
         context = {
             'content_object': self.content_object,
