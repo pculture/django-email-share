@@ -1,6 +1,9 @@
 import re
 
-from django.forms.fields import email_re
+try:
+    from django.forms.fields import email_re # Django 1.1
+except ImportError:
+    from django.core.validators import email_re # Django 1.2+
 from django.forms import CharField, ValidationError
 from django.forms.models import ModelForm
 from django.utils.translation import ugettext as _
