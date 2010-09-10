@@ -42,6 +42,9 @@ class ShareEmailForm(ModelForm):
             if getattr(self.request, 'user') and \
                     self.request.user.is_authenticated():
                 self.user = getattr(self.request, 'user')
+                if self.user.email:
+                    kwargs.setdefault('initial', {})
+                    kwargs['initial']['sender_email'] = self.user.email
             else:
                 self.user = None
         else:
@@ -51,9 +54,6 @@ class ShareEmailForm(ModelForm):
 
 
     def clean_sender_email(self):
-        if self.user and self.user.email:
-            # use the user's e-mail if it's present
-            return self.user.email
         value = self.cleaned_data.get('sender_email')
         if not value:
             raise ValidationError('This field is required.')
