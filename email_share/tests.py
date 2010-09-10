@@ -6,7 +6,7 @@ from django.core import mail
 from django.core.urlresolvers import reverse
 from django.test import Client, TestCase
 
-from email_share.forms import ShareEmailForm
+from email_share.forms import ShareEmailForm, ShareMultipleEmailForm
 from email_share.models import ShareEmail
 
 class ShareEmailTest(TestCase):
@@ -66,6 +66,31 @@ class ShareEmailTest(TestCase):
         self.assertEquals(email.sender_email, 'sender@example.com')
         self.assertEquals(email.recipient_email, 'recipient@example.com')
         self.assertEquals(email.message, 'Message from the sender!')
+
+    def test_multiple_form(self):
+        """
+        ShareMultipleEmailForm should accept multiple e-mails addresses.
+        """
+        content_object = ContentType.objects.all()[0] # get a random object to
+                                                      # use
+        form = ShareMultipleEmailForm({
+                'sender_email': 'sender@example.com',
+                'recipient_email': """recipient@example.com
+recipient2@example.com, recipient3@example.com""",
+                'message': 'Message from the sender!'
+                }, content_object=content_object)
+
+        self.assertTrue(form.is_valid(), form.errors)
+
+        emails = form.save()
+        self.assertEquals(len(emails), 3)
+        self.assertEquals([email.recipient_email for email in emails],
+                          ['recipient@example.com', 'recipient2@example.com',
+                           'recipient3@example.com'])
+        for email in emails:
+            self.assertTrue(email.content_object, content_object)
+            self.assertEquals(email.sender_email, 'sender@example.com')
+            self.assertEquals(email.message, 'Message from the sender!')
 
     def test_share_email_GET(self):
         """
