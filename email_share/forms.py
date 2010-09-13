@@ -12,6 +12,11 @@ from email_share.models import ShareEmail
 email_separator_re = re.compile(r'[^\w\.\-\+@_]+')
 
 class EmailListField(forms.CharField):
+
+    def __init__(self, max_emails=25, *args, **kwargs):
+        self.max_emails = max_emails
+        super(forms.CharField, self).__init__(*args, **kwargs)
+
     # based on code from http://www.djangosnippets.org/snippets/1958/
     def clean(self, value):
         super(EmailListField, self).clean(value)
@@ -23,6 +28,10 @@ class EmailListField(forms.CharField):
             if not email_re.match(email):
                 raise forms.ValidationError(
                     _('%s is not a valid e-mail address.') % email)
+        if self.max_emails is not None and len(emails) > self.max_emails:
+            raise forms.ValidationError(
+                _('Cannot send to more than %i addresses: %i') % (
+                    self.max_emails, len(emails)))
         return emails
 
 class ShareEmailForm(forms.ModelForm):
