@@ -15,7 +15,7 @@ class EmailListField(forms.CharField):
 
     def __init__(self, max_emails=25, *args, **kwargs):
         self.max_emails = max_emails
-        super(forms.CharField, self).__init__(*args, **kwargs)
+        forms.CharField.__init__(self, *args, **kwargs)
 
     # based on code from http://www.djangosnippets.org/snippets/1958/
     def clean(self, value):
