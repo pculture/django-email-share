@@ -65,7 +65,9 @@ class ShareEmail(models.Model):
         text_body = text_template.render(context)
 
         message = EmailMultiAlternatives(subject, text_body,
-                                         to=[self.recipient_email])
+                                         to=[self.recipient_email],
+                                         headers={
+                'Reply-To': self.sender.email})
 
         try:
             html_template = select_template_for_content_type('body.html',
